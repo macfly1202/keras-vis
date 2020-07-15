@@ -311,13 +311,18 @@ class MarkdownAPIGenerator(object):
             if not name.startswith("_") and hasattr(obj, "__module__") and obj.__module__ == modname:
                 handlers.append("\n%s %s.%s\n *Handler*" % (subsection, clsname, name))
 
-        methods = []
-        for name, obj in getmembers(cls, lambda a: inspect.ismethod(a) or inspect.isfunction(a)):
-            if not name.startswith("_") and hasattr(obj,
-                                                    "__module__") and obj.__module__ == modname and name not in handlers:
-                methods.append(self.func2md(obj, clsname=clsname, depth=depth + 1))
+        methods = [
+            self.func2md(obj, clsname=clsname, depth=depth + 1)
+            for name, obj in getmembers(
+                cls, lambda a: inspect.ismethod(a) or inspect.isfunction(a)
+            )
+            if not name.startswith("_")
+            and hasattr(obj, "__module__")
+            and obj.__module__ == modname
+            and name not in handlers
+        ]
 
-        string = CLASS_TEMPLATE.format(section=section,
+        return CLASS_TEMPLATE.format(section=section,
                                        header=header,
                                        path=path,
                                        doc=doc if doc else "",
@@ -325,7 +330,6 @@ class MarkdownAPIGenerator(object):
                                        variables="".join(variables),
                                        handlers="".join(handlers),
                                        methods="".join(methods))
-        return string
 
     def module2md(self, module):
         """Takes an imported module object and create a Markdown string containing functions and classes.
@@ -352,8 +356,7 @@ class MarkdownAPIGenerator(object):
 
         functions = []
         line_nos = []
-        for obj in func2names:
-            names = func2names[obj]
+        for obj, names in func2names.items():
             found.update(names)
 
             # Include if within module or included modules within __init__.py and exclude from global variables
@@ -363,7 +366,7 @@ class MarkdownAPIGenerator(object):
 
             if hasattr(obj, "__module__") and (obj.__module__ == modname or is_module_within_init):
                 names = list(filter(lambda name: not name.startswith("_"), names))
-                if len(names) > 0:
+                if names:
                     functions.append(self.func2md(obj, names=names))
                     line_nos.append(self.get_line_no(obj) or 0)
         functions = order_by_line_nos(functions, line_nos)
@@ -384,12 +387,12 @@ class MarkdownAPIGenerator(object):
 
         variables = order_by_line_nos(variables, line_nos)
         if variables:
-            new_list = ["**Global Variables**", "---------------"]
-            new_list.extend(variables)
+            new_list = ["**Global Variables**", "---------------", *variables]
             variables = new_list
 
-        string = MODULE_TEMPLATE.format(path=path,
-                                        global_vars="\n".join(variables) if variables else "",
-                                        functions="\n".join(functions) if functions else "",
-                                        classes="".join(classes) if classes else "")
-        return string
+        return MODULE_TEMPLATE.format(
+            path=path,
+            global_vars="\n".join(variables) if variables else "",
+            functions="\n".join(functions) if functions else "",
+            classes="".join(classes) if classes else "",
+        )

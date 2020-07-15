@@ -223,11 +223,7 @@ def get_img_shape(img):
     Returns:
         Tuple containing image shape information in `(samples, channels, image_dims...)` order.
     """
-    if isinstance(img, np.ndarray):
-        shape = img.shape
-    else:
-        shape = K.int_shape(img)
-
+    shape = img.shape if isinstance(img, np.ndarray) else K.int_shape(img)
     if K.image_data_format() == 'channels_last':
         shape = list(shape)
         shape.insert(1, shape[-1])

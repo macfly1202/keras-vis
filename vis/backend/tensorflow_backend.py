@@ -14,10 +14,14 @@ from tensorflow.keras.models import load_model
 from tensorflow.python.keras.layers import advanced_activations, Activation
 
 # Register all classes with `advanced_activations` module
-_ADVANCED_ACTIVATIONS = set()
-for name, obj in inspect.getmembers(advanced_activations, inspect.isclass):
-    if not name.startswith("_") and hasattr(obj, "__module__") and obj.__module__ == advanced_activations.__name__:
-        _ADVANCED_ACTIVATIONS.add(obj)
+_ADVANCED_ACTIVATIONS = {
+    obj
+    for name, obj in inspect.getmembers(advanced_activations, inspect.isclass)
+    if not name.startswith("_")
+    and hasattr(obj, "__module__")
+    and obj.__module__ == advanced_activations.__name__
+}
+
 _ADVANCED_ACTIVATIONS = tuple(_ADVANCED_ACTIVATIONS)
 
 
@@ -47,7 +51,7 @@ _BACKPROP_MODIFIERS = {
 
 
 # Maintain a mapping of original model, backprop_modifier -> modified model as cache.
-_MODIFIED_MODEL_CACHE = dict()
+_MODIFIED_MODEL_CACHE = {}
 
 
 def modify_model_backprop(model, backprop_modifier):
